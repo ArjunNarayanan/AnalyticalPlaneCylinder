@@ -38,15 +38,7 @@ struct CylindricalSolver
     lc::Any
     mc::Any
     theta0::Any
-    function CylindricalSolver(
-        inradius,
-        outradius,
-        ls,
-        ms,
-        lc,
-        mc,
-        theta0,
-    )
+    function CylindricalSolver(inradius, outradius, ls, ms, lc, mc, theta0)
         a = analytical_coefficient_matrix(inradius, outradius, ls, ms, lc, mc)
         r = analytical_coefficient_rhs(ls, ms, theta0)
         coeffs = a \ r
@@ -73,26 +65,43 @@ function radial_displacement(A::CylindricalSolver, r)
     end
 end
 
-function shell_radial_stress(ls, ms, theta0, A1, A2, r)
-    return (ls + 2ms) * (A1 - A2 / r^2) + ls * (A1 + A2 / r^2) -
-           (ls + 2ms / 3) * theta0
+function shell_radial_stress(A::CylindricalSolver, r)
+    return (A.ls + 2A.ms) * (A.A1s - A.A2s / r^2) +
+           A.ls * (A.A1s + A.A2s / r^2) - (A.ls + 2A.ms / 3) * A.theta0
 end
 
-function shell_circumferential_stress(ls, ms, theta0, A1, A2, r)
-    return ls * (A1 - A2 / r^2) + (ls + 2ms) * (A1 + A2 / r^2) -
-           (ls + 2ms / 3) * theta0
+function shell_circumferential_stress(A::CylindricalSolver, r)
+    return A.ls * (A.A1s - A.A2s / r^2) +
+           (A.ls + 2A.ms) * (A.A1s + A.A2s / r^2) -
+           (A.ls + 2A.ms / 3) * A.theta0
 end
 
-function shell_out_of_plane_stress(ls, ms, A1, theta0)
-    return 2 * ls * A1 - (ls + 2ms / 3) * theta0
+function shell_out_of_plane_stress(A::CylindricalSolver)
+    return 2 * A.ls * A.A1s - (A.ls + 2A.ms / 3) * A.theta0
 end
 
-function core_in_plane_stress(lc, mc, A1)
-    return (lc + 2mc) * A1 + lc * A1
+function shell_radial_strain(A::CylindricalSolver,r)
+    return A.A1s - A.A2s/r^2 - A.theta0/3
 end
 
-function core_out_of_plane_stress(lc, A1)
-    return 2 * lc * A1
+function shell_circumferential_strain(A::CylindricalSolver,r)
+    return A.A1s + A.A2s/r^2 - A.theta0/3
+end
+
+function shell_out_of_plane_strain(A::CylindricalSolver)
+    return -A.theta0/3
+end
+
+function core_in_plane_stress(A::CylindricalSolver)
+    return (A.lc + 2A.mc) * A.A1c + A.lc * A.A1c
+end
+
+function core_in_plane_strain(A::CylindricalSolver)
+    return A.A1c
+end
+
+function core_out_of_plane_stress(A::CylindricalSolver)
+    return 2 * A.lc * A.A1c
 end
 
 function pressure(stress)
@@ -106,9 +115,9 @@ end
 
 function shell_stress(A::CylindricalSolver, r)
 
-    srr = shell_radial_stress(A.ls, A.ms, A.theta0, A.A1s, A.A2s, r)
-    stt = shell_circumferential_stress(A.ls, A.ms, A.theta0, A.A1s, A.A2s, r)
-    s33 = shell_out_of_plane_stress(A.ls, A.ms, A.A1s, A.theta0)
+    srr = shell_radial_stress(A, r)
+    stt = shell_circumferential_stress(A, r)
+    s33 = shell_out_of_plane_stress(A)
 
     return [srr, stt, s33]
 end
@@ -123,13 +132,41 @@ function shell_deviatoric_stress(A::CylindricalSolver, r)
     return deviatoric_stress(stress)
 end
 
-function core_in_plane_stress(A::CylindricalSolver)
-    return core_in_plane_stress(A.lc, A.mc, A.A1c)
+function core_strain_energy(A::CylindricalSolver)
+    srr = core_in_plane_stress(A)
+    err = core_in_plane_strain(A)
+    stt = srr
+    ett = err
+    return 0.5 * (srr * err + stt * ett)
+end
+
+function shell_strain_energy(A::CylindricalSolver,r)
+    srr = shell_radial_stress(A,r)
+    stt = shell_circumferential_stress(A,r)
+    szz = shell_out_of_plane_stress(A)
+
+    err = shell_radial_strain(A,r)
+    ett = shell_circumferential_strain(A,r)
+    ezz = shell_out_of_plane_strain(A)
+
+    return 0.5*(srr*err + stt*ett + szz*ezz)
+end
+
+function core_compression_work(A::CylindricalSolver,V0)
+    srr = core_in_plane_stress(A)
+    ekk = core_dilatation(A)
+    return V0*(1+ekk)*srr
+end
+
+function shell_compression_work(A::CylindricalSolver,r,V0)
+    ekk = shell_dilatation(A)
+    srr = shell_radial_stress(A,r)
+    return V0*(1+ekk)*srr
 end
 
 function core_stress(A::CylindricalSolver)
-    s11 = core_in_plane_stress(A.lc, A.mc, A.A1c)
-    s33 = core_out_of_plane_stress(A.lc, A.A1c)
+    s11 = core_in_plane_stress(A)
+    s33 = core_out_of_plane_stress(A)
     return [s11, s11, s33]
 end
 
@@ -143,20 +180,10 @@ function core_deviatoric_stress(A::CylindricalSolver)
     return deviatoric_stress(stress)
 end
 
-function potential(
-    pressure,
-    devstress,
-    bulkmodulus,
-    shearmodulus,
-    specificvolume0,
-)
-    specificvolume = specificvolume0 * (1.0 - pressure / bulkmodulus)
-    devstressnorm = sum(devstress .^ 2)
+function core_dilatation(A::CylindricalSolver)
+    return 2*A.A1c
+end
 
-    p1 = pressure * specificvolume0
-    p2 = -(pressure^2) * specificvolume0 / (2bulkmodulus)
-    p3 = -specificvolume * devstress[1]
-    p4 = specificvolume0 / (4shearmodulus) * devstressnorm
-
-    return p1 + p2 + p3 + p4
+function shell_dilatation(A::CylindricalSolver)
+    return 2*A.A1s - A.theta0
 end
