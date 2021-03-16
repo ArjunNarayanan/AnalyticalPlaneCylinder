@@ -1,6 +1,8 @@
 using LinearAlgebra
 using PyPlot
-include("cylindrical-solver.jl")
+include("plane-strain-solver.jl")
+include("moduli-conversion.jl")
+PS = PlaneStrainSolver
 
 function coefficient_matrix_determinant(lambda, mu, inner_radius)
     return -4.0 * (lambda + mu) * (lambda + 2mu) / inner_radius
@@ -27,7 +29,7 @@ function shell_displacement_coefficient2(inner_radius,lambda,mu,theta0)
 end
 
 function solver_coefficients(inner_radius, outer_radius, lambda, mu, theta0)
-    solver = CylindricalSolver(
+    solver = PS.CylindricalSolver(
         inner_radius,
         outer_radius,
         lambda,
@@ -49,32 +51,20 @@ outer_radius = 1.0
 
 
 inner_radius = 1e-3:1e-3:outer_radius
-# direct_A1c = core_displacement_coefficient.(inner_radius,outer_radius,lambda,mu,theta0)
+direct_A1c = core_displacement_coefficient.(inner_radius,outer_radius,lambda,mu,theta0)
 direct_A1s = shell_displacement_coefficient1.(inner_radius,outer_radius,lambda,mu,theta0)
 direct_A2s = shell_displacement_coefficient2.(inner_radius,lambda,mu,theta0)
 
 solver_coeffs = solver_coefficients.(inner_radius,outer_radius,lambda,mu,theta0)
-# solver_A1c = [s[1] for s in solver_coeffs]
+solver_A1c = [s[1] for s in solver_coeffs]
 solver_A1s = [s[2] for s in solver_coeffs]
 solver_A2s = [s[3] for s in solver_coeffs]
 
-# fig,ax = PyPlot.subplots()
-# ax.plot(inner_radius,solver_A1c,label="solver")
-# ax.plot(inner_radius,direct_A1c,label="direct")
-# ax.legend()
-# ax.grid()
-# fig
+errorA1c = maximum(abs.(direct_A1c - solver_A1c))
+errorA1s = maximum(abs.(direct_A1s - solver_A1s))
+errorA2s = maximum(abs.(direct_A2s - solver_A2s))
 
-# fig,ax = PyPlot.subplots()
-# ax.plot(inner_radius,solver_A1s,label="solver")
-# ax.plot(inner_radius,direct_A1s,label="direct")
-# ax.legend()
-# ax.grid()
-# fig
-
-fig,ax = PyPlot.subplots()
-ax.plot(inner_radius,solver_A2s,label="solver")
-ax.plot(inner_radius,direct_A2s,label="direct")
-ax.legend()
-ax.grid()
-fig
+using Test
+@test errorA1c < 10eps()
+@test errorA1s < 10eps()
+@test errorA2s < 10eps()

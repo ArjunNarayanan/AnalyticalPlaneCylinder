@@ -1,10 +1,7 @@
-function bulk_modulus(l, m)
-    return l + 2m / 3
-end
+module PlaneStrainSolver
 
-function lame_lambda(k, m)
-    return k - 2m / 3
-end
+include("moduli-conversion.jl")
+include("utilities.jl")
 
 function analytical_coefficient_matrix(inradius, outradius, ls, ms, lc, mc)
     a = zeros(3, 3)
@@ -92,6 +89,13 @@ function shell_out_of_plane_strain(A::CylindricalSolver)
     return -A.theta0/3
 end
 
+function shell_strain(A::CylindricalSolver,r)
+    err = shell_radial_strain(A,r)
+    ett = shell_circumferential_strain(A,r)
+    ezz = shell_out_of_plane_strain(A,r)
+    return [err,ett,ezz]
+end
+
 function core_in_plane_stress(A::CylindricalSolver)
     return (A.lc + 2A.mc) * A.A1c + A.lc * A.A1c
 end
@@ -100,17 +104,13 @@ function core_in_plane_strain(A::CylindricalSolver)
     return A.A1c
 end
 
+function core_strain(A::CylindricalSolver)
+    err = core_in_plane_strain(A)
+    return [err,err,0.0]
+end
+
 function core_out_of_plane_stress(A::CylindricalSolver)
     return 2 * A.lc * A.A1c
-end
-
-function pressure(stress)
-    return -1.0 / 3.0 * sum(stress)
-end
-
-function deviatoric_stress(stress)
-    p = pressure(stress)
-    return stress .+ p
 end
 
 function shell_stress(A::CylindricalSolver, r)
@@ -186,4 +186,6 @@ end
 
 function shell_dilatation(A::CylindricalSolver)
     return 2*A.A1s - A.theta0
+end
+
 end
