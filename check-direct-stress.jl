@@ -1,6 +1,8 @@
 using LinearAlgebra
 using PyPlot
-include("cylindrical-solver.jl")
+include("plane-strain-solver.jl")
+include("moduli-conversion.jl")
+PS = PlaneStrainSolver
 
 function direct_core_in_plane_stress(
     inner_radius,
@@ -61,7 +63,7 @@ function direct_shell_out_of_plane_stress(inner_radius,outer_radius,lambda,mu,th
 end
 
 function solver_core_stress(inner_radius, outer_radius, lambda, mu, theta0)
-    solver = CylindricalSolver(
+    solver = PS.CylindricalSolver(
         inner_radius,
         outer_radius,
         lambda,
@@ -70,11 +72,11 @@ function solver_core_stress(inner_radius, outer_radius, lambda, mu, theta0)
         mu,
         theta0,
     )
-    return core_stress(solver)
+    return PS.core_stress(solver)
 end
 
 function solver_shell_stress(inner_radius, outer_radius, lambda, mu, theta0)
-    solver = CylindricalSolver(
+    solver = PS.CylindricalSolver(
         inner_radius,
         outer_radius,
         lambda,
@@ -83,7 +85,7 @@ function solver_shell_stress(inner_radius, outer_radius, lambda, mu, theta0)
         mu,
         theta0,
     )
-    return shell_stress(solver, inner_radius)
+    return PS.shell_stress(solver, inner_radius)
 end
 
 K = 247.0

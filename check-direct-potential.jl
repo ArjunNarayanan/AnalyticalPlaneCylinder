@@ -1,7 +1,9 @@
 using Test
 using LinearAlgebra
 using PyPlot
-include("cylindrical-solver.jl")
+include("plane-strain-solver.jl")
+include("moduli-conversion.jl")
+PS = PlaneStrainSolver
 
 function core_displacement_coefficient(
     inner_radius,
@@ -45,7 +47,7 @@ function solver_core_strain_energy(
     theta0,
 )
 
-    solver = CylindricalSolver(
+    solver = PS.CylindricalSolver(
         inner_radius,
         outer_radius,
         lambda,
@@ -54,7 +56,7 @@ function solver_core_strain_energy(
         mu,
         theta0,
     )
-    return core_strain_energy(solver)
+    return PS.core_strain_energy(solver)
 end
 
 function direct_core_strain_energy(
@@ -83,7 +85,7 @@ function solver_shell_strain_energy(
     theta0,
 )
 
-    solver = CylindricalSolver(
+    solver = PS.CylindricalSolver(
         inner_radius,
         outer_radius,
         lambda,
@@ -92,7 +94,7 @@ function solver_shell_strain_energy(
         mu,
         theta0,
     )
-    return shell_strain_energy(solver, inner_radius)
+    return PS.shell_strain_energy(solver, inner_radius)
 end
 
 function direct_shell_strain_energy(
@@ -125,7 +127,7 @@ function solver_core_compression_work(
     theta0,
     V0,
 )
-    solver = CylindricalSolver(
+    solver = PS.CylindricalSolver(
         inner_radius,
         outer_radius,
         lambda,
@@ -134,7 +136,7 @@ function solver_core_compression_work(
         mu,
         theta0,
     )
-    return core_compression_work(solver, V0)
+    return PS.core_compression_work(solver, V0)
 end
 
 function direct_core_compression_work(
@@ -165,7 +167,7 @@ function solver_shell_compression_work(
     V0,
 )
 
-    solver = CylindricalSolver(
+    solver = PS.CylindricalSolver(
         inner_radius,
         outer_radius,
         lambda,
@@ -174,7 +176,7 @@ function solver_shell_compression_work(
         mu,
         theta0,
     )
-    return shell_compression_work(solver, inner_radius, V0)
+    return PS.shell_compression_work(solver, inner_radius, V0)
 end
 
 function direct_shell_compression_work(
@@ -214,7 +216,7 @@ function solver_core_potential(
     V0,
 )
 
-    solver = CylindricalSolver(
+    solver = PS.CylindricalSolver(
         inner_radius,
         outer_radius,
         lambda,
@@ -223,8 +225,8 @@ function solver_core_potential(
         mu,
         theta0,
     )
-    se = V0 * core_strain_energy(solver)
-    cw = core_compression_work(solver, V0)
+    se = V0 * PS.core_strain_energy(solver)
+    cw = PS.core_compression_work(solver, V0)
     return se - cw
 end
 
@@ -255,7 +257,7 @@ function solver_shell_potential(
     V0,
 )
 
-    solver = CylindricalSolver(
+    solver = PS.CylindricalSolver(
         inner_radius,
         outer_radius,
         lambda,
@@ -264,8 +266,8 @@ function solver_shell_potential(
         mu,
         theta0,
     )
-    se = V0 * shell_strain_energy(solver, inner_radius)
-    cw = shell_compression_work(solver, inner_radius, V0)
+    se = V0 * PS.shell_strain_energy(solver, inner_radius)
+    cw = PS.shell_compression_work(solver, inner_radius, V0)
     return se - cw
 end
 
