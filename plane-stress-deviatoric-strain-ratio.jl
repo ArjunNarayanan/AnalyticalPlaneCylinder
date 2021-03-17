@@ -1,7 +1,8 @@
 using PyPlot
-include("plane-strain-solver.jl")
+include("plane-stress-solver.jl")
+include("moduli-conversion.jl")
 include("utilities.jl")
-PS = PlaneStrainSolver
+PS = PlaneStressSolver
 
 function deviatoric_strain_ratio(
     inner_radius,
@@ -20,7 +21,7 @@ function deviatoric_strain_ratio(
     shellinvariant = second_invariant(
         deviatoric_strain(PS.shell_strain(solver, inner_radius)),
     )
-    return coreinvariant/shellinvariant
+    return coreinvariant / shellinvariant
 end
 
 K1, K2 = 247.0e9, 192.0e9    # GPa
@@ -32,7 +33,7 @@ lambda2 = lame_lambda(K2, mu2)
 theta0 = -0.067
 
 outer_radius = 1.0e-3
-dx = outer_radius/1e3
+dx = outer_radius / 1e3
 inner_radius = dx:dx:outer_radius
 
 devinvariantratio =
@@ -46,10 +47,9 @@ devinvariantratio =
         theta0,
     )
 
-fig,ax = PyPlot.subplots()
-ax.plot(inner_radius,devinvariantratio)
+fig, ax = PyPlot.subplots()
+ax.plot(inner_radius, devinvariantratio)
 ax.grid()
 ax.set_xlabel("Interface position")
 ax.set_ylabel("Deviatoric strain invariant ratio")
 fig
-# # fig.savefig("deviatoric-strain-ratio.png")
