@@ -1,7 +1,9 @@
 using Test
 using LinearAlgebra
 using PyPlot
-include("cylindrical-solver.jl")
+include("plane-strain-solver.jl")
+include("moduli-conversion.jl")
+PS = PlaneStrainSolver
 
 function solver_potential_difference(
     inner_radius,
@@ -12,7 +14,7 @@ function solver_potential_difference(
     V0c,
     V0s,
 )
-    solver = CylindricalSolver(
+    solver = PS.CylindricalSolver(
         inner_radius,
         outer_radius,
         lambda,
@@ -22,11 +24,11 @@ function solver_potential_difference(
         theta0,
     )
 
-    cse = V0c * core_strain_energy(solver)
-    ccw = core_compression_work(solver, V0c)
+    cse = V0c * PS.core_strain_energy(solver)
+    ccw = PS.core_compression_work(solver, V0c)
 
-    sse = V0s * shell_strain_energy(solver, inner_radius)
-    scw = shell_compression_work(solver, inner_radius, V0s)
+    sse = V0s * PS.shell_strain_energy(solver, inner_radius)
+    scw = PS.shell_compression_work(solver, inner_radius, V0s)
 
     pd = (sse - scw) - (cse - ccw)
 end

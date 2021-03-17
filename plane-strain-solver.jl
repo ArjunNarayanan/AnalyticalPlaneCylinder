@@ -92,7 +92,7 @@ end
 function shell_strain(A::CylindricalSolver,r)
     err = shell_radial_strain(A,r)
     ett = shell_circumferential_strain(A,r)
-    ezz = shell_out_of_plane_strain(A,r)
+    ezz = shell_out_of_plane_strain(A)
     return [err,ett,ezz]
 end
 
