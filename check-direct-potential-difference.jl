@@ -66,13 +66,16 @@ end
 
 K = 247.0
 mu = 126.0
-V0s = 0.8
-V0c = 0.5
+rhos = 3.93e3           # Kg/m^3
+rhoc = 3.68e3
+V0s = 1.0/rhos
+V0c = 1.0/rhoc
 lambda = lame_lambda(K, mu)
 theta0 = -0.067
 
-outer_radius = 1.0
-inner_radius = 1e-3:1e-3:outer_radius
+outer_radius = 1.0e-3
+dx = outer_radius/1e3
+inner_radius = dx:dx:outer_radius
 
 
 solverpd =
