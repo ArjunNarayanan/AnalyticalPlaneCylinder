@@ -13,13 +13,13 @@ theta0 = -0.067
 outer_radius = 1.0
 
 M = K*mu/(K+4mu/3)
-N = (6K+5mu)/(9*(K+mu/3))
-L = mu/(3*(K+mu/3))
+N = (6K+5mu)/(9K+3mu)
+L = mu/(3K+mu)
 V0 = 0.5*(V0s+V0c)
 
-t1 = M*V0*(N-1)*theta0^2
+t1 = M*V0*(1-N)*theta0^2
 beta2 = M*V0*(1-L)*theta0^2
-alpha2 = -(ΔG0 + t1)
+alpha2 = -(ΔG0 - t1)
 
 alpha = sqrt(alpha2)
 beta = sqrt(beta2)
